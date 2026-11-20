@@ -198,6 +198,10 @@ async function startServer() {
     res.json({ ok: true, model: MODEL_NAME });
   });
 
+  app.get('/googleb0652478a64b6468.html', (_req: Request, res: Response) => {
+    res.type('text/html; charset=utf-8').send('google-site-verification: googleb0652478a64b6468.html');
+  });
+
   app.get('/robots.txt', (req: Request, res: Response) => {
     const baseUrl = getBaseUrl(req);
     res.setHeader('Access-Control-Allow-Origin', '*');

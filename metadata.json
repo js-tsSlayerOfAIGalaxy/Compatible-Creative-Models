@@ -2,5 +2,7 @@
   "name": "Compatible Creative — Sebastian Markiewicz Portfolio",
   "description": "Compatible Creative modeling and creative portfolio for Sebastian Markiewicz with AI-powered SEO audit, alt-text optimization, editorial publishing, and backlink outreach.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
