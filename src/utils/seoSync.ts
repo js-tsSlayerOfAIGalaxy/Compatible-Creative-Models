@@ -28,7 +28,7 @@ export function buildJsonLdPayload(
     '@type': 'Person',
     '@id': personId,
     name: profile.name,
-    alternateName: ['Compatible Creative', 'Markiewicz Creative Models'],
+    alternateName: ['Compatible Creative', 'Markiewicz Creative Models', 'Compatible Music'],
     jobTitle: profile.tagline,
     description: profile.seoDescription,
     url: origin,
@@ -42,6 +42,7 @@ export function buildJsonLdPayload(
       '@type': 'Organization',
       name: profile.agency,
       alternateName: 'Markiewicz Creative Models',
+      url: 'https://www.compatiblecreative.co.uk/',
       ...(logoUrl ? { logo: logoUrl } : {}),
     },
     knowsAbout: profile.targetKeywords,
@@ -73,48 +74,102 @@ export function buildJsonLdPayload(
     })),
   };
 
-  const articleNodes = articles.map((article) => ({
-    '@type': 'Article',
-    '@id': `${origin}/#journal-${article.slug}`,
-    headline: article.title,
-    description: article.metaDescription,
-    datePublished: article.publishedAt,
-    keywords: article.targetKeyword,
+  const blogNode = {
+    '@type': 'Blog',
+    '@id': `${origin}/blog`,
+    name: 'Compatible Creative Blog — Sebastian Markiewicz',
+    url: `${origin}/blog`,
     author: { '@id': personId },
-    mainEntityOfPage: `${origin}/#journal-${article.slug}`,
-  }));
+    blogPost: articles.map((article) => {
+      const linkedImages = shoots
+        .filter((s) => article.linkedShootIds.includes(s.id))
+        .map((s) =>
+          s.imageUrl.startsWith('http') || s.imageUrl.startsWith('data:')
+            ? s.imageUrl
+            : `${origin}${s.imageUrl}`
+        );
+      return {
+        '@type': 'BlogPosting',
+        '@id': `${origin}/blog/${article.slug}`,
+        headline: article.title,
+        description: article.metaDescription,
+        datePublished: article.publishedAt,
+        dateModified: article.publishedAt,
+        keywords: [
+          article.targetKeyword,
+          'Sebastian Markiewicz',
+          'Compatible Creative',
+          'Markiewicz Creative Models',
+          'Compatible Music',
+        ].join(', '),
+        image: linkedImages.length > 0 ? linkedImages : [`${origin}${profile.heroImage}`],
+        author: { '@id': personId },
+        publisher: {
+          '@type': 'Organization',
+          name: profile.agency,
+          ...(logoUrl ? { logo: { '@type': 'ImageObject', url: logoUrl } } : {}),
+        },
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id': `${origin}/blog/${article.slug}`,
+        },
+      };
+    }),
+  };
 
   return {
     '@context': 'https://schema.org',
-    '@graph': [personNode, galleryNode, ...articleNodes],
+    '@graph': [personNode, galleryNode, blogNode],
   };
 }
 
 export function syncDocumentSeo(
   profile: ModelProfile,
   shoots: PortfolioShoot[],
-  articles: JournalArticle[]
+  articles: JournalArticle[],
+  activeArticle?: JournalArticle | null,
+  isBlogIndex?: boolean
 ) {
   if (typeof document === 'undefined') return;
 
   const origin = window.location.origin;
   const canonicalUrl = `${origin}${window.location.pathname}`;
-  const heroImageUrl =
-    profile.heroImage.startsWith('http') || profile.heroImage.startsWith('data:')
-      ? profile.heroImage
-      : `${origin}${profile.heroImage}`;
+  const articleLeadShoot = activeArticle
+    ? shoots.find((s) => activeArticle.linkedShootIds.includes(s.id))
+    : undefined;
+  const leadImageRaw = articleLeadShoot?.imageUrl || profile.heroImage;
+  const leadImageUrl =
+    leadImageRaw.startsWith('http') || leadImageRaw.startsWith('data:')
+      ? leadImageRaw
+      : `${origin}${leadImageRaw}`;
 
-  document.title = profile.seoTitle;
-  setMetaContent('meta[name="description"]', 'name', 'description', profile.seoDescription);
+  const pageTitle = activeArticle
+    ? `${activeArticle.title} | Compatible Creative Blog`
+    : isBlogIndex
+    ? `Blog — ${profile.name} | Compatible Creative Models`
+    : profile.seoTitle;
+
+  const pageDescription = activeArticle
+    ? activeArticle.metaDescription
+    : isBlogIndex
+    ? `Editorial notes, runway dispatches, SEO case studies, and Compatible Music highlights by ${profile.name} (${profile.agency}).`
+    : profile.seoDescription;
+
+  document.title = pageTitle;
+  setMetaContent('meta[name="description"]', 'name', 'description', pageDescription);
   setMetaContent('meta[name="keywords"]', 'name', 'keywords', profile.targetKeywords.join(', '));
-  setMetaContent('meta[property="og:title"]', 'property', 'og:title', profile.seoTitle);
-  setMetaContent('meta[property="og:description"]', 'property', 'og:description', profile.seoDescription);
+  setMetaContent('meta[property="og:type"]', 'property', 'og:type', activeArticle ? 'article' : 'website');
+  setMetaContent('meta[property="og:title"]', 'property', 'og:title', pageTitle);
+  setMetaContent('meta[property="og:description"]', 'property', 'og:description', pageDescription);
   setMetaContent('meta[property="og:site_name"]', 'property', 'og:site_name', profile.name);
   setMetaContent('meta[property="og:url"]', 'property', 'og:url', canonicalUrl);
-  setMetaContent('meta[property="og:image"]', 'property', 'og:image', heroImageUrl);
-  setMetaContent('meta[name="twitter:title"]', 'name', 'twitter:title', profile.seoTitle);
-  setMetaContent('meta[name="twitter:description"]', 'name', 'twitter:description', profile.seoDescription);
-  setMetaContent('meta[name="twitter:image"]', 'name', 'twitter:image', heroImageUrl);
+  setMetaContent('meta[property="og:image"]', 'property', 'og:image', leadImageUrl);
+  if (activeArticle) {
+    setMetaContent('meta[property="article:published_time"]', 'property', 'article:published_time', activeArticle.publishedAt);
+  }
+  setMetaContent('meta[name="twitter:title"]', 'name', 'twitter:title', pageTitle);
+  setMetaContent('meta[name="twitter:description"]', 'name', 'twitter:description', pageDescription);
+  setMetaContent('meta[name="twitter:image"]', 'name', 'twitter:image', leadImageUrl);
 
   let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
   if (!canonical) {
@@ -139,10 +194,10 @@ export function generateSitemapXml(origin: string, articles: JournalArticle[]) {
   const articleUrls = articles
     .map(
       (a) => `  <url>
-    <loc>${origin}/#journal-${a.slug}</loc>
+    <loc>${origin}/blog/${a.slug}</loc>
     <lastmod>${a.publishedAt}</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>`
     )
     .join('\n');
@@ -156,9 +211,9 @@ export function generateSitemapXml(origin: string, articles: JournalArticle[]) {
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>${origin}/#comp-card</loc>
+    <loc>${origin}/blog</loc>
     <lastmod>${today}</lastmod>
-    <changefreq>monthly</changefreq>
+    <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 ${articleUrls}

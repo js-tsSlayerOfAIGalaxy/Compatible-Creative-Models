@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 
-export type ActiveView = 'portfolio' | 'journal' | 'compcard' | 'studio';
+export type ActiveView = 'portfolio' | 'blog' | 'compcard' | 'studio';
 
 interface HeaderProps {
   brandName: string;
@@ -11,10 +11,10 @@ interface HeaderProps {
   onOpenBooking: () => void;
 }
 
-const NAV_ITEMS: { id: ActiveView; label: string }[] = [
-  { id: 'portfolio', label: 'Portfolio' },
-  { id: 'journal', label: 'Journal' },
-  { id: 'compcard', label: 'Comp Card' },
+const NAV_ITEMS: { id: ActiveView; label: string; href: string }[] = [
+  { id: 'portfolio', label: 'Portfolio', href: '/' },
+  { id: 'blog', label: 'Blog', href: '/blog' },
+  { id: 'compcard', label: 'Comp Card', href: '/#comp-card' },
 ];
 
 export function Header({
@@ -35,9 +35,12 @@ export function Header({
     <header className="sticky top-0 z-40 bg-[#050505]/92 backdrop-blur-md border-b border-zinc-800/80 print:hidden">
       <div className="max-w-[1280px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between gap-8">
         {/* Zone 1: Single-line Brand Wordmark + Compatible Creative Emblem */}
-        <button
-          type="button"
-          onClick={() => handleSelect('portfolio')}
+        <a
+          href="/"
+          onClick={(e) => {
+            e.preventDefault();
+            handleSelect('portfolio');
+          }}
           className="inline-flex items-center gap-3 font-display text-2xl font-semibold tracking-tight text-zinc-100 whitespace-nowrap shrink-0 hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37]"
         >
           {logoUrl && (
@@ -49,17 +52,20 @@ export function Header({
             />
           )}
           <span>{brandName}</span>
-        </button>
+        </a>
 
-        {/* Zone 2: 4 Clean Single-Line Nav Links */}
+        {/* Zone 2: Clean Single-Line Nav Links */}
         <nav className="hidden md:flex items-center gap-8" aria-label="Primary Navigation">
           {NAV_ITEMS.map((item) => {
             const isActive = activeView === item.id;
             return (
-              <button
+              <a
                 key={item.id}
-                type="button"
-                onClick={() => handleSelect(item.id)}
+                href={item.href}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSelect(item.id);
+                }}
                 className={`relative py-1 text-sm font-medium whitespace-nowrap shrink-0 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] ${
                   isActive ? 'text-zinc-100' : 'text-zinc-400 hover:text-zinc-100'
                 }`}
@@ -70,7 +76,7 @@ export function Header({
                     isActive ? 'bg-[#D4AF37] opacity-100' : 'opacity-0'
                   }`}
                 />
-              </button>
+              </a>
             );
           })}
         </nav>
@@ -99,16 +105,19 @@ export function Header({
       {mobileOpen && (
         <div className="md:hidden border-t border-zinc-800 bg-[#0A0A0C] px-6 py-4 space-y-2">
           {NAV_ITEMS.map((item) => (
-            <button
+            <a
               key={item.id}
-              type="button"
-              onClick={() => handleSelect(item.id)}
+              href={item.href}
+              onClick={(e) => {
+                e.preventDefault();
+                handleSelect(item.id);
+              }}
               className={`block w-full text-left py-2.5 text-sm font-medium transition-colors ${
                 activeView === item.id ? 'text-[#D4AF37]' : 'text-zinc-300 hover:text-white'
               }`}
             >
               {item.label}
-            </button>
+            </a>
           ))}
           <div className="pt-2 border-t border-zinc-800">
             <button

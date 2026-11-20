@@ -3,9 +3,22 @@
   <channel>
     <title>Sebastian Markiewicz — Compatible Creative &amp; Markiewicz Creative Models</title>
     <link>https://compatible-creative-models.vercel.app/</link>
-    <description>Automated 24-hour portfolio syndication feed for Sebastian Markiewicz, Compatible Creative, and Markiewicz Creative Models.</description>
+    <description>Automated 24-hour portfolio and blog syndication feed for Sebastian Markiewicz, Compatible Creative, Markiewicz Creative Models, and Compatible Music.</description>
     <ttl>1440</ttl>
-    <lastBuildDate>Fri, 20 Nov 2026 12:49:02 GMT</lastBuildDate>
+    <lastBuildDate>Fri, 20 Nov 2026 16:10:00 GMT</lastBuildDate>
+    <item>
+      <title>From Bedroom Beats to Paris Runways: The Unlikely Reinvention of Sebastian Markiewicz</title>
+      <link>https://compatible-creative-models.vercel.app/blog/from-bedroom-beats-to-paris-runways-sebastian-markiewicz</link>
+      <guid isPermaLink="true">https://compatible-creative-models.vercel.app/blog/from-bedroom-beats-to-paris-runways-sebastian-markiewicz</guid>
+      <pubDate>Fri, 20 Nov 2026 16:10:00 GMT</pubDate>
+      <category>Editorial</category>
+      <category>Sebastian Markiewicz</category>
+      <category>Compatible Creative</category>
+      <category>Markiewicz Creative Models</category>
+      <category>Compatible Music</category>
+      <description>&lt;p&gt;Trading late-night Ableton sessions and bedroom turntables for Paris Fashion Week flashbulbs: how Sebastian Markiewicz pivoted from SoundCloud mixes to commanding international lingerie and athleticwear catwalks.&lt;/p&gt;&lt;p&gt;&lt;img src="https://compatible-creative-models.vercel.app/assets/aistudio/image_e65c65a0.png" alt="From Bedroom Beats to Paris Runways: Sebastian Markiewicz walking the catwalk" /&gt;&lt;/p&gt;&lt;p&gt;Read the full story at &lt;a href="https://compatible-creative-models.vercel.app/blog/from-bedroom-beats-to-paris-runways-sebastian-markiewicz"&gt;compatible-creative-models.vercel.app/blog/from-bedroom-beats-to-paris-runways-sebastian-markiewicz&lt;/a&gt;.&lt;/p&gt;</description>
+      <media:content url="https://compatible-creative-models.vercel.app/assets/aistudio/image_e65c65a0.png" medium="image" />
+    </item>
     <item>
       <title>Sebastian Markiewicz — Catwalk &amp; Runway Presentation | Compatible Creative</title>
       <link>https://compatible-creative-models.vercel.app/</link>

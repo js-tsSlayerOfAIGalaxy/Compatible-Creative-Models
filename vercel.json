@@ -1,7 +1,9 @@
 {
   "rewrites": [
     { "source": "/feed", "destination": "/feed.xml" },
-    { "source": "/rss", "destination": "/rss.xml" }
+    { "source": "/rss", "destination": "/rss.xml" },
+    { "source": "/blog", "destination": "/index.html" },
+    { "source": "/blog/:path*", "destination": "/index.html" }
   ],
   "headers": [
     {

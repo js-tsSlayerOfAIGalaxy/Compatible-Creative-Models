@@ -10,6 +10,16 @@ export interface ModelMeasurements {
   eyes: string;
 }
 
+export interface ExternalWorkLink {
+  id: string;
+  title: string;
+  subtitle: string;
+  domain: string;
+  url: string;
+  category: 'Studio & Direction' | 'Album Release' | 'Streaming & Catalog' | 'Audio Archive';
+  description: string;
+}
+
 export interface ModelProfile {
   name: string;
   tagline: string;
@@ -53,6 +63,7 @@ export interface JournalArticle {
   id: string;
   slug: string;
   title: string;
+  category?: string;
   metaDescription: string;
   targetKeyword: string;
   publishedAt: string;

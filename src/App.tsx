@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import {
   DEFAULT_ARTICLES,
   DEFAULT_BACKLINKS,
   DEFAULT_PROFILE,
   DEFAULT_SHOOTS,
+  OTHER_WORK_LINKS,
 } from './data/defaultPortfolio';
 import { BookingModal } from './components/BookingModal';
 import { CompCardSection } from './components/CompCardSection';
@@ -12,20 +13,21 @@ import { EditorialJournal } from './components/EditorialJournal';
 import { Header, type ActiveView } from './components/Header';
 import { HeroSection } from './components/HeroSection';
 import { LookbookGallery } from './components/LookbookGallery';
+import { OtherWorkSection } from './components/OtherWorkSection';
 import { SeoStudio } from './components/SeoStudio';
 import type {
+  BacklinkTarget,
   JournalArticle,
   ModelProfile,
   PortfolioShoot,
-  BacklinkTarget,
 } from './types';
 import { syncDocumentSeo } from './utils/seoSync';
 
 const STORAGE_KEYS = {
-  profile: 'sebastian_cc_profile_v5',
-  shoots: 'sebastian_cc_shoots_v5',
-  articles: 'sebastian_cc_articles_v5',
-  backlinks: 'sebastian_cc_backlinks_v5',
+  profile: 'sebastian_cc_profile_v7',
+  shoots: 'sebastian_cc_shoots_v7',
+  articles: 'sebastian_cc_articles_v7',
+  backlinks: 'sebastian_cc_backlinks_v7',
 };
 
 function loadStored<T>(key: string, fallback: T): T {
@@ -36,6 +38,38 @@ function loadStored<T>(key: string, fallback: T): T {
   } catch {
     return fallback;
   }
+}
+
+function parseLocationRoute(): { view: ActiveView; blogSlug: string | null } {
+  if (typeof window === 'undefined') {
+    return { view: 'portfolio', blogSlug: null };
+  }
+  const pathname = window.location.pathname.replace(/\/+$/, '') || '/';
+  const hash = window.location.hash;
+
+  if (hash === '#studio') {
+    return { view: 'studio', blogSlug: null };
+  }
+  if (pathname === '/blog') {
+    return { view: 'blog', blogSlug: null };
+  }
+  if (pathname.startsWith('/blog/')) {
+    const slug = decodeURIComponent(pathname.slice('/blog/'.length)).replace(/\/+$/, '');
+    return { view: 'blog', blogSlug: slug || null };
+  }
+  if (hash === '#comp-card') {
+    return { view: 'compcard', blogSlug: null };
+  }
+  if (hash === '#blog' || hash === '#journal') {
+    return { view: 'blog', blogSlug: null };
+  }
+  if (hash.startsWith('#blog-')) {
+    return { view: 'blog', blogSlug: hash.slice('#blog-'.length) || null };
+  }
+  if (hash.startsWith('#journal-')) {
+    return { view: 'blog', blogSlug: hash.slice('#journal-'.length) || null };
+  }
+  return { view: 'portfolio', blogSlug: null };
 }
 
 export default function App() {
@@ -52,33 +86,25 @@ export default function App() {
     loadStored(STORAGE_KEYS.backlinks, DEFAULT_BACKLINKS)
   );
 
-  const [activeView, setActiveView] = useState<ActiveView>(() => {
-    if (typeof window === 'undefined') return 'portfolio';
-    const h = window.location.hash;
-    if (h === '#studio') return 'studio';
-    if (h === '#comp-card') return 'compcard';
-    if (h === '#journal' || h.startsWith('#journal-')) return 'journal';
-    return 'portfolio';
-  });
+  const initialRoute = parseLocationRoute();
+  const [activeView, setActiveView] = useState<ActiveView>(initialRoute.view);
+  const [selectedBlogSlug, setSelectedBlogSlug] = useState<string | null>(initialRoute.blogSlug);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
 
   useEffect(() => {
-    const onHashChange = () => {
-      const h = window.location.hash;
-      if (h === '#studio') {
-        setActiveView('studio');
-      } else if (h === '#comp-card') {
-        setActiveView('compcard');
-      } else if (h === '#journal' || h.startsWith('#journal-')) {
-        setActiveView('journal');
-      } else if (activeView === 'studio') {
-        setActiveView('portfolio');
-      }
+    const syncFromLocation = () => {
+      const next = parseLocationRoute();
+      setActiveView(next.view);
+      setSelectedBlogSlug(next.blogSlug);
     };
-    window.addEventListener('hashchange', onHashChange);
-    return () => window.removeEventListener('hashchange', onHashChange);
-  }, [activeView]);
+    window.addEventListener('popstate', syncFromLocation);
+    window.addEventListener('hashchange', syncFromLocation);
+    return () => {
+      window.removeEventListener('popstate', syncFromLocation);
+      window.removeEventListener('hashchange', syncFromLocation);
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.profile, JSON.stringify(profile));
@@ -97,8 +123,13 @@ export default function App() {
   }, [backlinks]);
 
   useEffect(() => {
-    syncDocumentSeo(profile, shoots, articles);
-  }, [profile, shoots, articles]);
+    const activeArticle =
+      activeView === 'blog' && selectedBlogSlug
+        ? articles.find((a) => a.slug === selectedBlogSlug) ?? null
+        : null;
+    const isBlogIndex = activeView === 'blog' && !selectedBlogSlug;
+    syncDocumentSeo(profile, shoots, articles, activeArticle, isBlogIndex);
+  }, [profile, shoots, articles, activeView, selectedBlogSlug]);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -107,12 +138,32 @@ export default function App() {
     }, 3200);
   };
 
-  const handleNavigate = (view: ActiveView) => {
+  const navigateToPath = useCallback((path: string, view: ActiveView, blogSlug: string | null = null) => {
     setActiveView(view);
-    if (window.location.hash === '#studio' && view !== 'studio') {
-      history.replaceState(null, '', window.location.pathname + window.location.search);
+    setSelectedBlogSlug(blogSlug);
+    if (typeof window !== 'undefined') {
+      const currentFull = `${window.location.pathname}${window.location.hash}`;
+      if (currentFull !== path) {
+        window.history.pushState(null, '', path);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const handleNavigate = (view: ActiveView) => {
+    if (view === 'blog') {
+      navigateToPath('/blog', 'blog', null);
+    } else if (view === 'compcard') {
+      navigateToPath('/#comp-card', 'compcard', null);
+    } else if (view === 'studio') {
+      navigateToPath('/#studio', 'studio', null);
+    } else {
+      navigateToPath('/', 'portfolio', null);
+    }
+  };
+
+  const handleOpenBlogArticle = (slug: string) => {
+    navigateToPath(`/blog/${slug}`, 'blog', slug);
   };
 
   const handleResetAll = () => {
@@ -149,19 +200,31 @@ export default function App() {
 
             <LookbookGallery shoots={shoots} />
 
+            <OtherWorkSection links={OTHER_WORK_LINKS} />
+
             <EditorialJournal
               articles={articles}
               shoots={shoots}
               modelName={profile.name}
+              otherWorkLinks={OTHER_WORK_LINKS}
+              onSelectArticleSlug={handleOpenBlogArticle}
+              onOpenBlogIndex={() => handleNavigate('blog')}
+              onOpenPortfolio={() => handleNavigate('portfolio')}
             />
           </>
         )}
 
-        {activeView === 'journal' && (
+        {activeView === 'blog' && (
           <EditorialJournal
             articles={articles}
             shoots={shoots}
             modelName={profile.name}
+            otherWorkLinks={OTHER_WORK_LINKS}
+            isFullPage
+            selectedSlug={selectedBlogSlug}
+            onSelectArticleSlug={handleOpenBlogArticle}
+            onOpenBlogIndex={() => handleNavigate('blog')}
+            onOpenPortfolio={() => handleNavigate('portfolio')}
           />
         )}
 
@@ -187,7 +250,7 @@ export default function App() {
             onAddShoot={(created) => setShoots((prev) => [created, ...prev])}
             onPublishArticle={(article) => {
               setArticles((prev) => [article, ...prev]);
-              handleNavigate('journal');
+              handleOpenBlogArticle(article.slug);
             }}
             onAddBacklink={(target) => setBacklinks((prev) => [target, ...prev])}
             onUpdateBacklinkStatus={(id, status, securedUrl) =>
@@ -229,28 +292,69 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-6">
-            <button
-              type="button"
-              onClick={() => handleNavigate('portfolio')}
+          <div className="flex flex-wrap items-center gap-5">
+            <a
+              href="/"
+              onClick={(e) => {
+                e.preventDefault();
+                handleNavigate('portfolio');
+              }}
               className="hover:text-zinc-200 transition-colors"
             >
               Portfolio
-            </button>
-            <button
-              type="button"
-              onClick={() => handleNavigate('journal')}
+            </a>
+            <a
+              href="/blog"
+              onClick={(e) => {
+                e.preventDefault();
+                handleNavigate('blog');
+              }}
               className="hover:text-zinc-200 transition-colors"
             >
-              Journal
-            </button>
-            <button
-              type="button"
-              onClick={() => handleNavigate('compcard')}
+              Blog
+            </a>
+            <a
+              href="/#comp-card"
+              onClick={(e) => {
+                e.preventDefault();
+                handleNavigate('compcard');
+              }}
               className="hover:text-zinc-200 transition-colors"
             >
               Comp Card
-            </button>
+            </a>
+            <a
+              href="https://www.compatiblecreative.co.uk/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-zinc-200 transition-colors"
+            >
+              Compatible Creative UK
+            </a>
+            <a
+              href="https://www.compatiblecreative.co.uk/albums/compatible-music/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-zinc-200 transition-colors"
+            >
+              Compatible Music
+            </a>
+            <a
+              href="https://www.beatport.com/artist/sebastian-markiewicz/311129"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-zinc-200 transition-colors"
+            >
+              Beatport
+            </a>
+            <a
+              href="https://soundcloud.com/sebastianmarkiewicz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-zinc-200 transition-colors"
+            >
+              SoundCloud
+            </a>
             <a
               href="/sitemap.xml"
               target="_blank"

@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import type { Request, Response } from 'express';
+import fs from 'fs';
 import path from 'path';
 import { GoogleGenAI, Type } from '@google/genai';
 
@@ -12,6 +13,7 @@ const REQUIRED_KEYWORDS = [
   'Sebastian Markiewicz',
   'Compatible Creative',
   'Markiewicz Creative Models',
+  'Compatible Music',
 ];
 
 interface SyndicationPlate {
@@ -227,20 +229,38 @@ async function startServer() {
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>${escapeXml(baseUrl)}/#comp-card</loc>
+    <loc>${escapeXml(baseUrl)}/blog</loc>
     <lastmod>${lastmod}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.9</priority>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
   </url>
   <url>
-    <loc>${escapeXml(baseUrl)}/#journal-compatible-creative-sebastian-markiewicz-catwalk-runway-notes</loc>
+    <loc>${escapeXml(baseUrl)}/blog/from-bedroom-beats-to-paris-runways-sebastian-markiewicz</loc>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.95</priority>
+  </url>
+  <url>
+    <loc>${escapeXml(baseUrl)}/blog/compatible-creative-sebastian-markiewicz-catwalk-runway-notes</loc>
     <lastmod>2026-11-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>${escapeXml(baseUrl)}/#journal-building-authoritative-backlinks-compatible-creative</loc>
+    <loc>${escapeXml(baseUrl)}/blog/compatible-music-sebastian-markiewicz-sound-and-runway</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${escapeXml(baseUrl)}/blog/building-authoritative-backlinks-compatible-creative</loc>
     <lastmod>2026-10-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${escapeXml(baseUrl)}/blog/high-key-studio-streetwear-casting-notes-sebastian-markiewicz</loc>
+    <lastmod>2026-10-08</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -273,6 +293,10 @@ async function startServer() {
     <loc>${escapeXml(baseUrl)}/</loc>
 ${imagesXml}
   </url>
+  <url>
+    <loc>${escapeXml(baseUrl)}/blog/from-bedroom-beats-to-paris-runways-sebastian-markiewicz</loc>
+${imagesXml}
+  </url>
 </urlset>`;
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
@@ -287,8 +311,21 @@ ${imagesXml}
       ...PORTFOLIO_PLATES.filter((p) => p.id !== activePlate.id),
     ];
 
-    const itemsXml = orderedPlates
-      .map((plate, index) => {
+    const blogArticleUrl = `${baseUrl}/blog/from-bedroom-beats-to-paris-runways-sebastian-markiewicz`;
+    const blogItemXml = `    <item>
+      <title>From Bedroom Beats to Paris Runways: The Unlikely Reinvention of Sebastian Markiewicz</title>
+      <link>${escapeXml(blogArticleUrl)}</link>
+      <guid isPermaLink="true">${escapeXml(blogArticleUrl)}</guid>
+      <pubDate>${new Date('2026-11-20T16:10:00Z').toUTCString()}</pubDate>
+      <category>Editorial</category>
+      ${REQUIRED_KEYWORDS.map((kw) => `<category>${escapeXml(kw)}</category>`).join('\n      ')}
+      <description>${escapeXml(`<p>Trading late-night Ableton sessions and bedroom turntables for Paris Fashion Week flashbulbs: how Sebastian Markiewicz pivoted from SoundCloud mixes to commanding international lingerie and athleticwear catwalks.</p><p><img src="${baseUrl}/assets/aistudio/image_e65c65a0.png" alt="From Bedroom Beats to Paris Runways: Sebastian Markiewicz walking the catwalk" /></p><p>Read the full story at <a href="${blogArticleUrl}">${blogArticleUrl}</a>.</p>`)}</description>
+      <media:content url="${escapeXml(`${baseUrl}/assets/aistudio/image_e65c65a0.png`)}" medium="image" />
+    </item>`;
+
+    const itemsXml = [
+      blogItemXml,
+      ...orderedPlates.map((plate, index) => {
         const pubDate = new Date(
           Date.parse(syndicationState.lastPublishedAt) - index * INTERVAL_24H_MS
         ).toUTCString();
@@ -305,8 +342,8 @@ ${imagesXml}
       <description>${escapeXml(`<p>${itemDescription}</p><p><img src="${imageUrl}" alt="${plate.title}" /></p><p>Keywords: ${REQUIRED_KEYWORDS.join(' · ')}</p>`)}</description>
       <media:content url="${escapeXml(imageUrl)}" medium="image" />
     </item>`;
-      })
-      .join('\n');
+      }),
+    ].join('\n');
 
     const rss = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/">
@@ -634,8 +671,30 @@ ${(linkedShoots || [])
   } else {
     const distDir = path.resolve(process.cwd(), 'dist');
     app.use(express.static(distDir));
-    app.get('*', (_req: Request, res: Response) => {
-      res.sendFile(path.join(distDir, 'index.html'));
+    app.get('*', (req: Request, res: Response) => {
+      const indexPath = path.join(distDir, 'index.html');
+      if (req.path.includes('from-bedroom-beats-to-paris-runways-sebastian-markiewicz')) {
+        try {
+          const baseUrl = getBaseUrl(req);
+          const articleTitle =
+            'From Bedroom Beats to Paris Runways: The Unlikely Reinvention of Sebastian Markiewicz';
+          const articleDesc =
+            'From bedroom DJ mixes on SoundCloud and Beatport to Paris Fashion Week catwalks: the unlikely reinvention of model Sebastian Markiewicz with Compatible Creative.';
+          const articleUrl = `${baseUrl}/blog/from-bedroom-beats-to-paris-runways-sebastian-markiewicz`;
+          const articleImg = `${baseUrl}/assets/aistudio/image_e65c65a0.png`;
+          let html = fs.readFileSync(indexPath, 'utf-8');
+          html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeXml(articleTitle)}</title>`);
+          html = html.replace(
+            '</head>',
+            `<link rel="canonical" href="${escapeXml(articleUrl)}" />\n<meta property="og:url" content="${escapeXml(articleUrl)}" />\n<meta property="og:type" content="article" />\n<meta property="og:title" content="${escapeXml(articleTitle)}" />\n<meta property="og:description" content="${escapeXml(articleDesc)}" />\n<meta property="og:image" content="${escapeXml(articleImg)}" />\n</head>`
+          );
+          res.type('html').send(html);
+          return;
+        } catch {
+          // Fall back to standard index.html sendFile
+        }
+      }
+      res.sendFile(indexPath);
     });
   }
 
