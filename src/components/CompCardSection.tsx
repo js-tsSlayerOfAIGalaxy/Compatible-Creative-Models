@@ -43,8 +43,11 @@ export function CompCardSection({
           <div className="flex items-center gap-4">
             {profile.logoUrl && (
               <img
-                src={profile.logoUrl}
+                src={profile.logoUrl.endsWith('.png') && profile.logoUrl.startsWith('/assets/aistudio/') ? profile.logoUrl.replace(/\.png$/, '.webp') : profile.logoUrl}
                 alt={`${profile.agency} logo`}
+                width={48}
+                height={48}
+                decoding="async"
                 referrerPolicy="no-referrer"
                 className="w-12 h-12 rounded-xl object-contain bg-black border border-zinc-800 p-1 shrink-0"
               />
@@ -95,6 +98,8 @@ export function CompCardSection({
               src={profile.heroImage}
               alt={`${profile.name} — ${profile.agency} comp card front portrait`}
               title={profile.name}
+              priority
+              sizes="(max-width: 1023px) 100vw, 42vw"
               className="w-full h-full object-cover object-top"
             />
           </div>

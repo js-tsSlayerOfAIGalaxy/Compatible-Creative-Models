@@ -113,6 +113,7 @@ export function LookbookGallery({ shoots }: LookbookGalleryProps) {
                       src={shoot.imageUrl}
                       alt={shoot.altText}
                       title={shoot.title}
+                      sizes={isFeature ? '(max-width: 767px) 100vw, 66vw' : '(max-width: 767px) 100vw, 33vw'}
                       className="w-full h-full object-cover object-top transition-transform duration-500 ease-out group-hover:scale-[1.03]"
                     />
 

@@ -45,8 +45,11 @@ export function Header({
         >
           {logoUrl && (
             <img
-              src={logoUrl}
+              src={logoUrl.endsWith('.png') && logoUrl.startsWith('/assets/aistudio/') ? logoUrl.replace(/\.png$/, '.webp') : logoUrl}
               alt={`${brandName} logo`}
+              width={32}
+              height={32}
+              decoding="async"
               referrerPolicy="no-referrer"
               className="w-8 h-8 rounded-md object-contain bg-black shrink-0"
             />

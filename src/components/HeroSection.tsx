@@ -68,6 +68,8 @@ export function HeroSection({
                 src={profile.heroImage}
                 alt={`${profile.name} — ${profile.tagline} portrait`}
                 title={profile.name}
+                priority
+                sizes="(max-width: 1023px) 100vw, 50vw"
                 className="w-full h-full object-cover object-top"
               />
               <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/85 via-black/35 to-transparent flex items-end justify-between gap-4">

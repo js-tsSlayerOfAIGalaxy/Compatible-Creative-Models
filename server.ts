@@ -661,6 +661,14 @@ ${(linkedShoots || [])
     }
   });
 
+  app.use(
+    '/assets/aistudio',
+    express.static(path.resolve(process.cwd(), 'public/assets/aistudio'), {
+      maxAge: '365d',
+      immutable: true,
+    })
+  );
+
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
@@ -670,7 +678,17 @@ ${(linkedShoots || [])
     app.use(vite.middlewares);
   } else {
     const distDir = path.resolve(process.cwd(), 'dist');
-    app.use(express.static(distDir));
+    app.use(
+      express.static(distDir, {
+        maxAge: '365d',
+        immutable: true,
+        setHeaders: (res, filePath) => {
+          if (/\.(html|xml|txt)$/i.test(filePath)) {
+            res.setHeader('Cache-Control', 'no-cache');
+          }
+        },
+      })
+    );
     app.get('*', (req: Request, res: Response) => {
       const indexPath = path.join(distDir, 'index.html');
       if (req.path.includes('from-bedroom-beats-to-paris-runways-sebastian-markiewicz')) {
@@ -684,6 +702,11 @@ ${(linkedShoots || [])
           const articleImg = `${baseUrl}/assets/aistudio/image_e65c65a0.png`;
           let html = fs.readFileSync(indexPath, 'utf-8');
           html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${escapeXml(articleTitle)}</title>`);
+          html = html.replace('/assets/aistudio/image_2dfd57c7.webp', '/assets/aistudio/image_e65c65a0.webp');
+          html = html.replace(
+            '/assets/aistudio/image_2dfd57c7-640.webp 640w, /assets/aistudio/image_2dfd57c7.webp 960w',
+            '/assets/aistudio/image_e65c65a0-640.webp 640w, /assets/aistudio/image_e65c65a0.webp 960w'
+          );
           html = html.replace(
             '</head>',
             `<link rel="canonical" href="${escapeXml(articleUrl)}" />\n<meta property="og:url" content="${escapeXml(articleUrl)}" />\n<meta property="og:type" content="article" />\n<meta property="og:title" content="${escapeXml(articleTitle)}" />\n<meta property="og:description" content="${escapeXml(articleDesc)}" />\n<meta property="og:image" content="${escapeXml(articleImg)}" />\n</head>`

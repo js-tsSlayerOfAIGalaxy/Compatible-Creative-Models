@@ -176,6 +176,8 @@ export function EditorialJournal({
                   src={linkedShoots[0].imageUrl}
                   alt={linkedShoots[0].altText}
                   title={linkedShoots[0].title}
+                  priority
+                  sizes="(max-width: 1023px) 100vw, 832px"
                   className="w-full h-full object-cover object-top"
                 />
               </div>

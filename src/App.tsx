@@ -276,8 +276,12 @@ export default function App() {
           <div className="flex items-center gap-3.5">
             {profile.logoUrl && (
               <img
-                src={profile.logoUrl}
+                src={profile.logoUrl.endsWith('.png') && profile.logoUrl.startsWith('/assets/aistudio/') ? profile.logoUrl.replace(/\.png$/, '.webp') : profile.logoUrl}
                 alt={`${profile.agency} logo`}
+                width={36}
+                height={36}
+                loading="lazy"
+                decoding="async"
                 referrerPolicy="no-referrer"
                 className="w-9 h-9 rounded-lg object-contain bg-black border border-zinc-800 p-1 shrink-0"
               />
