@@ -83,13 +83,16 @@ function escapeXml(str: string): string {
 }
 
 function getBaseUrl(req?: Request): string {
+  if (req) {
+    const forwardedHost = req.headers['x-forwarded-host'];
+    const host = (Array.isArray(forwardedHost) ? forwardedHost[0] : forwardedHost) || req.get('host');
+    if (host && !host.startsWith('localhost') && !host.startsWith('127.0.0.1')) {
+      const proto = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'https';
+      return `${proto}://${host}`;
+    }
+  }
   if (process.env.APP_URL && process.env.APP_URL !== 'MY_APP_URL') {
     return process.env.APP_URL.replace(/\/+$/, '');
-  }
-  if (req) {
-    const proto = (req.headers['x-forwarded-proto'] as string) || req.protocol || 'http';
-    const host = req.get('host') || `localhost:${PORT}`;
-    return `${proto}://${host}`;
   }
   return `http://localhost:${PORT}`;
 }
@@ -197,6 +200,7 @@ async function startServer() {
 
   app.get('/robots.txt', (req: Request, res: Response) => {
     const baseUrl = getBaseUrl(req);
+    res.setHeader('Access-Control-Allow-Origin', '*');
     res.type('text/plain').send(
       [
         'User-agent: *',
@@ -243,7 +247,9 @@ async function startServer() {
     <priority>0.8</priority>
   </url>
 </urlset>`;
-    res.type('application/xml').send(xml);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.send(xml);
   });
 
   app.get('/image-sitemap.xml', (req: Request, res: Response) => {
@@ -264,10 +270,12 @@ async function startServer() {
 ${imagesXml}
   </url>
 </urlset>`;
-    res.type('application/xml').send(xml);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.send(xml);
   });
 
-  app.get('/feed.xml', (req: Request, res: Response) => {
+  const sendRssFeed = (req: Request, res: Response) => {
     const baseUrl = getBaseUrl(req);
     const activePlate = PORTFOLIO_PLATES[syndicationState.rotationIndex];
     const orderedPlates = [
@@ -307,8 +315,12 @@ ${imagesXml}
 ${itemsXml}
   </channel>
 </rss>`;
-    res.type('application/rss+xml').send(rss);
-  });
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Content-Type', 'application/rss+xml; charset=utf-8');
+    res.send(rss);
+  };
+
+  app.get(['/feed.xml', '/feed', '/rss', '/rss.xml'], sendRssFeed);
 
   app.get('/api/public/syndication', (req: Request, res: Response) => {
     const baseUrl = getBaseUrl(req);
