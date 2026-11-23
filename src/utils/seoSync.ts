@@ -41,7 +41,7 @@ export function buildJsonLdPayload(
     worksFor: {
       '@type': 'Organization',
       name: profile.agency,
-      alternateName: 'Markiewicz Creative Models',
+      alternateName: 'Sebastian Markiewicz - Compatible Creative',
       url: 'https://www.compatiblecreative.co.uk/',
       ...(logoUrl ? { logo: logoUrl } : {}),
     },
